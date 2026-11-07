@@ -14,7 +14,11 @@ Membership.schema.index({ tenantId: 1, userId: 1, companyId: 1 }, { unique: true
 Company.schema.index({ tenantId: 1, code: 1 }, { unique: true });
 WorkspaceSetting.schema.index({ tenantId: 1, key: 1 }, { unique: true });
 const common = { companyId: oid(), createdBy: oid(), title: str(true), description: str(), status: { type: String, default: 'active' }, ownerId: ref(), dueAt: dt(), notes: str(), isActive: { type: Boolean, default: true }, archivedAt: dt(), tags: [{ type: String }], meta: { type: Schema.Types.Mixed } };
-function make(name: string, fields: Record<string, any>) {
+// Capture each entity's field names at the generic boundary. Using
+// `Record<string, any>` as the parameter type erased literal keys such as
+// Task.assigneeIds / Invoice.amount from every model returned by `make()`.
+// Mongoose documents remain tenant-scoped by tenantSchema's query hooks.
+function make<TFields extends Record<string, any>>(name: string, fields: TFields) {
     const schema = tenantSchema({ ...common, ...fields }, opts);
     schema.index({ tenantId: 1, companyId: 1, createdAt: -1 });
     schema.index({ tenantId: 1, companyId: 1, status: 1 });

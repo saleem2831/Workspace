@@ -318,8 +318,11 @@ router.delete('/tenants/:id',wrap(async(req,res)=>{
   if(membershipCount)throw new HttpError(409,'Tenant has members; archive and export instead of deleting it');
   if(subscriptions?.provider!=='manual'||subscriptions?.providerSubscriptionId)
     throw new HttpError(409,'Linked billing provider must be resolved before deletion');
-  const protectedModels=[...Object.values(models),Membership,TaskUpdate,StoredFile,JournalEntry,AuditLog,WorkspaceSetting];
-  const counts=await runWithTenant(String(tenant._id),()=>Promise.all(protectedModels.map(m=>m.countDocuments({tenantId:tenant._id}))));
+  // All models expose countDocuments, but their different document types make
+  // inference of the mapped union too complex for TypeScript. Normalize only
+  // the model list; preserve the explicit tenant filter and runWithTenant.
+  const protectedModels: mongoose.Model<any>[]=[...Object.values(models),Membership,TaskUpdate,StoredFile,JournalEntry,AuditLog,WorkspaceSetting];
+  const counts=await runWithTenant(String(tenant._id),()=>Promise.all(protectedModels.map(model=>model.countDocuments({tenantId:tenant._id}))));
   if(counts.some(x=>x>0))throw new HttpError(409,'Tenant contains business, financial, document or audit records; archive and export instead');
   if(await Promise.all([ImportBatch,ExportAudit,AiUsage,SupportGrant].map(m=>m.countDocuments({tenantId:tenant._id}))).then(n=>n.some(x=>x>0)))
     throw new HttpError(409,'Tenant has recorded activity; archive and export instead');

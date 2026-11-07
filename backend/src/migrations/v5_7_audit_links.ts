@@ -21,12 +21,20 @@ let problems=0;
 try{
   for(const check of checks){
     let mismatches=0,missing=0;
-    const cursor=check.source.find({[check.field]:{$exists:true,$ne:null}}).select(`companyId ${check.field}`).lean().cursor();
+    // Each entry has a different model type. Normalizing the *read-only audit*
+    // operations prevents TypeScript from trying to call a union of unrelated
+    // Mongoose find()/findById() overloads; runtime queries stay unchanged.
+    const source: mongoose.Model<any> = check.source;
+    const target: mongoose.Model<any> = check.target;
+    const cursor=source.find({[check.field]:{$exists:true,$ne:null}}).select(`companyId ${check.field}`).lean().cursor();
     for await(const doc of cursor){
-      const id=(doc as any)[check.field];
+      const id=doc[check.field];
       if(!id)continue;
-      const ref=await check.target.findById(id).select('companyId').lean();
+      const ref=await target.findById(id).select('companyId').lean();
       if(!ref)missing++;
+      // findById() returns one document, but Model<any>'s lean() type also
+      // includes an array branch. Narrow that branch before reading companyId.
+      else if(Array.isArray(ref))throw new Error('Unexpected array result from findById in audit');
       else if(String(ref.companyId)!==String(doc.companyId))mismatches++;
     }
     if(mismatches||missing){console.warn(`${check.label}: ${mismatches} cross-company, ${missing} missing target(s)`);problems+=mismatches+missing;}

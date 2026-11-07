@@ -59,7 +59,7 @@ async function run(){
     const indexes=await src.collection(name).listIndexes().toArray();
     const summary:any={collection:name,sourceCount:count,indexes:indexes.length};
     if(apply){
-      const options=info.options||{};
+      const options=('options' in info && info.options) ? info.options : {};
       await dst.createCollection(name,options as any);
       const target=dst.collection(name);
       const docs:any[]=[];

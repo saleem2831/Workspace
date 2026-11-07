@@ -80,7 +80,9 @@ async function validateRelations(input: Record<string, any>, companyId: string, 
 function cleanBody(entity: string, body: any, creating = false) {
     if (!body || typeof body !== 'object' || Array.isArray(body))
         throw new HttpError(400, 'Expected record object');
-    const cleaned = Object.fromEntries(Object.entries(body).filter(([key]) => !restrictedFields.has(key) && !(entity === 'leads' && key === 'projectId')));
+    // Dynamic entity payloads are narrowed by runtime schema-path and domain
+    // validators below; keep a string-keyed view after that trust boundary.
+    const cleaned: Record<string, any> = Object.fromEntries(Object.entries(body).filter(([key]) => !restrictedFields.has(key) && !(entity === 'leads' && key === 'projectId')));
     const schema = modelFor(entity).schema;
     for (const [key, value] of Object.entries(cleaned)) {
         if (!schema.path(key))

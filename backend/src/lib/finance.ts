@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import { Decimal } from 'decimal.js';
 import { HttpError } from './security.js';
 export const D = (value: unknown) => new Decimal(String(value ?? 0));
 export function nonNegativeAmount(value: unknown) {
