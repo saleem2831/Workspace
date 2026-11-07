@@ -53,7 +53,7 @@ const labels:Record<Locale,Record<string,string>>={
   'New action':'إجراء جديد','Save changes':'حفظ التغييرات','Create record':'إنشاء سجل','Cancel':'إلغاء',
   'Saving…':'جار الحفظ…','Uploading…':'جار الرفع…','Select':'اختر','Search records':'البحث في السجلات','Search records...':'ابحث في السجلات...',
   'No records found':'لا توجد سجلات','Try changing your filters or creating a new record.':'جرّب تغيير المرشحات أو إنشاء سجل جديد.',
-  'Title':'العنوان','Description':'الوصف','Status':'الحالة','Active':'نشط','Pending':'قيد الانتظار','Approved':'تمت الموافقة','Rejected':'مرفوض','Completed':'مكتمل','Archived':'مؤرشف',
+  'Title':'العنوان','Description':'الوصف','Status':'الحالة','Active':'نشط','Pending':'قيد الانتظار','Rejected':'مرفوض','Completed':'مكتمل','Archived':'مؤرشف',
   'Company':'الشركة','Company (required)':'الشركة (مطلوب)','Client Id':'العميل','Project Id':'المشروع','Owner Id':'المسؤول','Assignee Ids':'المكلّفون','Reviewer Ids':'المراجعون',
   'Amount':'المبلغ','Currency':'العملة','Email':'البريد الإلكتروني','Phone':'الهاتف','Country Code':'رمز الدولة','Student Name':'اسم الطالب','Full name':'الاسم الكامل',
   'Courses':'الدورات','Students':'الطلاب','Batches':'الدفعات','Fee Installments':'أقساط الرسوم','Internships':'التدريب العملي','Mentors':'المشرفون',
