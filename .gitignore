@@ -1,0 +1,25 @@
+**/node_modules/
+**/dist/
+**/.env
+!frontend/.env.example
+!backend/.env.example
+*.log
+.DS_Store
+
+**/private-uploads/
+**/dist/
+**/node_modules/
+
+**/*migration-report*.json
+**/storage-migration-report.json
+**/.env.backup*
+**/migration-manifest*.jsonl
+
+# Never commit real environment variables, local backups or credentials.
+**/.env.*
+!**/.env.example
+!**/.env.production.example
+!**/.env.staging.example
+*.pem
+*.key
+**/credentials.json

@@ -1,0 +1,36 @@
+{
+  "name": "bitstek-workspace-frontend",
+  "version": "6.2.7",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm run build",
+    "health": "node scripts/health-check.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.66.8",
+    "axios": "^1.7.9",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.29.0",
+    "recharts": "^2.15.1",
+    "qrcode.react": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.8.2",
+    "vite": "^6.1.0"
+  },
+  "description": "React client communicating with one Bitstek Workspace REST API",
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

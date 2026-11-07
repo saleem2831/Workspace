@@ -1,0 +1,25 @@
+{
+  "version": "6.2.0",
+  "source_ts_tsx_files": 72,
+  "relative_imports_checked": 183,
+  "unresolved_relative_imports": [],
+  "css_validation": {
+    "saas.css": {
+      "rules": 42,
+      "parse_errors": 0
+    },
+    "app.css": {
+      "rules": 592,
+      "parse_errors": 0
+    }
+  },
+  "ts_syntax_parser": "validated independently using TypeScript compiler API: 72 files, 0 parse errors",
+  "executed_migration_policy_assertions": 6,
+  "verified_source_file_structure": true,
+  "live_npm_build": "NOT VERIFIED: dependency install timed out",
+  "live_mongodb_migration": "NOT VERIFIED: no source/target credentials and database service",
+  "live_s3_migration": "NOT VERIFIED: no private buckets or provider credentials",
+  "browser_Arabic_RTL": "NOT VERIFIED: no interactive browser E2E suite",
+  "deployment": "NOT VERIFIED: no connected Render environment",
+  "certification": "DEVELOPER PREVIEW; NOT PRODUCTION CERTIFIED"
+}

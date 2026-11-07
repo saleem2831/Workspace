@@ -1,0 +1,1 @@
+Previous v6.1 BRD/FDD/TDD/UI reference documents. v6.2's `docs/v6_2/SPEC_CHANGELOG.md` and migration/localization runbooks supersede the relevant earlier design sections. These documents are references, not independent evidence of a production-ready deployment.
