@@ -18,8 +18,30 @@ export function currentTenant(): string {
  * which models contain customer data. Platform control models are separate.
  * Direct MongoDB driver access is reserved for reviewed migrations only.
  */
-export function tenantSchema(fields: Record<string, any>, options: any = {}) {
-  const schema = new Schema({ tenantId: { type: Schema.Types.ObjectId, required: true, index: true }, ...fields }, options);
+/**
+ * The Mongoose Schema constructor cannot infer document fields when its input
+ * is spread from a Record<string, any>.  Without an explicit RawDocType,
+ * mongoose.model() infers only { tenantId }, and route compilation fails with
+ * TS2339 for ordinary fields such as Company.name and Membership.role.
+ *
+ * Keep the *keys* of the supplied schema definition in the document type.
+ * Values are intentionally permissive because this project's dynamic schema
+ * factory builds definitions at runtime (including nested and Decimal128
+ * fields). Future refactoring can replace `any` with named domain interfaces.
+ * This type declaration changes no database schema or tenant middleware.
+ */
+type TenantDocument<TFields extends Record<string, any>> = {
+  tenantId: mongoose.Types.ObjectId;
+} & { [K in keyof TFields]: any };
+
+export function tenantSchema<TFields extends Record<string, any>>(
+  fields: TFields,
+  options: any = {},
+): Schema<TenantDocument<TFields>> {
+  const schema = new Schema<TenantDocument<TFields>>(
+    { tenantId: { type: Schema.Types.ObjectId, required: true, index: true }, ...fields } as any,
+    options,
+  );
   const readOps = ['find','findOne','countDocuments','estimatedDocumentCount','distinct',
     'updateOne','updateMany','findOneAndUpdate','replaceOne','findOneAndReplace',
     'deleteOne','deleteMany','findOneAndDelete'] as const;
