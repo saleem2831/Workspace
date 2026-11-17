@@ -1,10 +1,21 @@
 import 'dotenv/config';
 import {configuredOrigins} from './lib/origin-policy.js';
 
-const allowedOrigins = configuredOrigins(
-    process.env.WEB_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
-    process.env.WEB_ORIGINS || ''
-);
+// const allowedOrigins = configuredOrigins(
+//     process.env.WEB_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173',
+//     process.env.WEB_ORIGINS || ''
+// );
+
+const allowedOrigins = (
+    process.env.ALLOWED_ORIGINS ||
+    process.env.WEB_ORIGIN ||
+    'http://localhost:5173'
+)
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+
 const cookieSameSite = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase();
 
 export const config = {
