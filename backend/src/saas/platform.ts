@@ -2,6 +2,7 @@ import { Router } from 'express';
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { User, Company, Membership, StoredFile, TaskUpdate, JournalEntry, AuditLog, WorkspaceSetting, models } from '../models.js';
 import { PlatformOperator, Tenant, TenantMembership, SaaSPlan, SaaSSubscription, TenantInvitation, PlatformAudit, ExportAudit, ImportBatch, AiUsage, SupportGrant, PlatformSetting } from './models.js';
 import { HttpError, wrap } from '../lib/security.js';
@@ -231,6 +232,28 @@ router.get('/tenants/:id/users',wrap(async(req,res)=>{
       tenantActive:!!m.active,tenantRole:m.role,mfaEnabled:!!u?.mfaEnabled,
       companies:companyMembers.filter(c=>String(c.userId)===String(m.userId)).map(c=>({companyId:String(c.companyId),role:c.role}))};
   }));
+}));
+/** One-time administrator initiated reset; only single-tenant, non-platform identities. */
+router.post('/tenants/:id/users/:userId/reset-password',wrap(async(req,res)=>{
+  await platformOwner(req);ensureObjectId(req.params.id);ensureObjectId(req.params.userId);
+  const {confirmation}=z.object({confirmation:z.string()}).parse(req.body);
+  const tenant=await Tenant.findById(req.params.id).lean();
+  if(!tenant||confirmation!==tenant.slug)throw new HttpError(400,'Incorrect tenant workspace code');
+  const member=await TenantMembership.findOne({tenantId:tenant._id,userId:req.params.userId,active:true});
+  if(!member)throw new HttpError(404,'Active tenant membership not found');
+  if(req.params.userId===req.actor!.id)throw new HttpError(403,'Cannot reset your own platform account');
+  if(await PlatformOperator.exists({userId:req.params.userId}))throw new HttpError(403,'Platform identities cannot be reset here');
+  if(await TenantMembership.countDocuments({userId:req.params.userId})!==1)
+    throw new HttpError(409,'Shared login belongs to multiple tenants; reset through a verified account recovery flow');
+  const user=await User.findOne({_id:req.params.userId,active:true});
+  if(!user)throw new HttpError(404,'Active user not found');
+  const temporaryPassword='Bw-'+crypto.randomBytes(24).toString('base64url')+'!';
+  user.passwordHash=await bcrypt.hash(temporaryPassword,12);
+  user.sessionVersion=(user.sessionVersion||0)+1;
+  await user.save();
+  await logPlatform(req,String(tenant._id),'tenant.user.password-reset',{userId:req.params.userId});
+  res.setHeader('Cache-Control','no-store');
+  res.json({temporaryPassword,notice:'Shown once. Deliver securely; user must change the password after login. Existing sessions invalidated.'});
 }));
 router.patch('/tenants/:id/users/:userId/email',wrap(async(req,res)=>{
   await platformOwner(req);ensureObjectId(req.params.id);ensureObjectId(req.params.userId);

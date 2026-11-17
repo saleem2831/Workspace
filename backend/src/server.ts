@@ -10,6 +10,7 @@ import { config, validateConfig } from './config.js';
 import { authenticate, csrfGuard, HttpError } from './lib/security.js';
 import authRoutes from './routes/auth.js';
 import recordRoutes from './routes/records.js';
+import taskImportRoutes from './routes/task-import.js';
 import workflowRoutes from './routes/workflows.js';
 import adminRoutes from './routes/admin.js';
 import companyManagementRoutes from './routes/company-management.js';
@@ -43,6 +44,7 @@ app.get('/api/ready', (_req, res) => {
 });
 app.use('/api/auth', authRoutes);
 app.use('/api', authenticate, csrfGuard);
+app.use('/api/records/tasks/import', taskImportRoutes);
 app.use('/api/records', recordRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/admin/companies',companyManagementRoutes);

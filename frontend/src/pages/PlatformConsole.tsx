@@ -119,6 +119,17 @@ export default function PlatformConsole(){
     await act(async()=>{const r=await http.post(`/platform/tenants/${selected._id}/reissue-invite`,{confirmation:selected.slug});
       setInvite({token:r.data.inviteToken,email:r.data.email,workspace:selected.slug});},
       'Invitation reissued. The previous unclaimed invitation is revoked. Share the new URL securely.');};
+  const resetMemberPassword=async(user:TenantUser)=>{
+    if(!selected||!isOwner)return;
+    if(!confirm(`Reset password for ${user.name} (${user.email})? Their sessions will be invalidated.`))return;
+    resetFeedback();setLoading(true);
+    try{const r=await http.post<{temporaryPassword:string}>(`/platform/tenants/${selected._id}/users/${user.userId}/reset-password`,{confirmation:selected.slug});
+      // Explicit user gesture to copy, never persist temporary passwords in app state or logs.
+      const password=r.data.temporaryPassword;
+      setMessage(`Temporary password generated for ${user.name}. Copy it from the one-time dialog and deliver securely.`);
+      window.prompt('One-time temporary password — copy it now. This is not saved in the UI.',password);
+    }catch(e:any){setErr(e.message||'Reset failed');}finally{setLoading(false);}
+  };
   const editMember=(user:TenantUser)=>{setEditingUser(user.userId);setUserName(user.name);setUserEmail(user.email);setUserActive(user.tenantActive);resetFeedback();};
   const updateMember=async(e:FormEvent)=>{e.preventDefault();if(!selected||!editingUser)return;
     if(prompt(`Type workspace code ${selected.slug} to confirm name and tenant access changes.`)!==selected.slug)return;
@@ -217,7 +228,7 @@ export default function PlatformConsole(){
             <span className="saas-user-badge">{u.tenantRole==='super_admin'?'Super Admin':'Member'}</span>
             <span className="saas-user-badge">{u.tenantActive?'Active':'Disabled'}</span>
             <span className="saas-user-badge">MFA {u.mfaEnabled?'enabled':'not enabled'}</span>
-          </div></div>{isOwner&&<button type="button" className="button secondary" onClick={()=>editMember(u)}>Edit user</button>}
+          </div></div>{isOwner&&<div style={{display:'flex',gap:8,flexWrap:'wrap'}}><button type="button" className="button secondary" disabled={loading||!u.tenantActive} onClick={()=>void resetMemberPassword(u)}>Reset password</button><button type="button" className="button secondary" onClick={()=>editMember(u)}>Edit user</button></div>}
         </div>)}</div>
         {!users.isLoading&&!users.data?.length&&<p>No users yet. The invited Super Admin must first activate their account.</p>}
         {editingUser&&isOwner&&<div className="saas-user-editor"><div className="saas-plan-head"><h3>Edit tenant user</h3><button className="button secondary" type="button" onClick={()=>setEditingUser('')}>Close editor</button></div>

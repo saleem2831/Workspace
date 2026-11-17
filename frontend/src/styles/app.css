@@ -2602,3 +2602,10 @@ a:focus-visible,button:focus-visible {
 .shell .saas-tabs button.active,.shell .saas-pill{color:var(--purple)!important;background:var(--theme-soft)!important;border-color:var(--theme-soft)!important}
 .shell input:focus,.shell textarea:focus,.shell select:focus{outline-color:var(--purple)}
 .tenant-company-metric{display:inline-block;white-space:normal}.tenant-company-card{min-width:0}
+
+/* Work Board bulk task import */
+.task-import-mask{position:fixed;inset:0;z-index:1200;background:rgba(12,18,38,.65);display:flex;align-items:center;justify-content:center;padding:16px}
+.task-import-dialog{background:var(--surface,#fff);color:var(--text,#1d2433);width:min(740px,100%);max-height:90vh;overflow:auto;border-radius:16px;padding:24px;box-shadow:0 20px 70px #0005;display:grid;gap:16px}
+.task-import-head,.task-import-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.task-import-preview{overflow:auto;max-height:280px}.task-import-preview table{width:100%;border-collapse:collapse}.task-import-preview td,.task-import-preview th{border-bottom:1px solid #ccc5;text-align:left;padding:9px}
+.task-import-errors{max-height:130px;overflow:auto;color:#b42318}.task-import-error{color:#b42318}

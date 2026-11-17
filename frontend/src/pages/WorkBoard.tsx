@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { CalendarDays, ChevronRight, Columns3, List, Plus, Send, UserRound } from 'lucide-react';
+import { CalendarDays, ChevronRight, Columns3, List, Plus, Send, UserRound, UploadCloud } from 'lucide-react';
+import TaskImport from '../components/TaskImport';
 import { useWorkspace } from '../App';
 import { dateText, fetchRecords, http, shortDate, updateRecord } from '../api';
 import { stages } from '../config';
@@ -12,6 +13,7 @@ export default function WorkBoard() {
     const toast = useToast();
     const [selected, setSelected] = useState<any | null>(null);
     const [create, setCreate] = useState(false);
+    const [importOpen,setImportOpen]=useState(false);
     const [list, setList] = useState(false);
     const [search, setSearch] = useState('');
     const [priority, setPriority] = useState('');
@@ -69,7 +71,7 @@ export default function WorkBoard() {
         }
     };
     return <><PageHead title="Work Board" subtitle="Track and move work across stages. Click any task for details, updates and linked records." action={{ label: 'New task', onClick: () => setCreate(true) }}><button className={`button ${list ? 'secondary' : 'selected-button'}`} onClick={() => setList(false)}><Columns3 size={16}/> Board</button><button className={`button ${list ? 'selected-button' : 'secondary'}`} onClick={() => setList(true)}><List size={16}/> List</button></PageHead>
- <div className="board-filters"><Toolbar search={search} setSearch={setSearch} extra={<select value={priority} onChange={e => setPriority(e.target.value)}><option value="">All priorities</option><option>P1</option><option>P2</option><option>P3</option></select>}/></div>
+ <div className="board-filters"><button className="button secondary" onClick={()=>setImportOpen(true)} disabled={company==='all'} title={company==='all'?'Select one company to import tasks':'Import tasks from CSV or Excel'}><UploadCloud size={16}/> Import Tasks</button><Toolbar search={search} setSearch={setSearch} extra={<select value={priority} onChange={e => setPriority(e.target.value)}><option value="">All priorities</option><option>P1</option><option>P2</option><option>P3</option></select>}/></div>
  {q.isPending ? <Loader /> : q.error ? <ErrorState error={q.error}/> : list ? <div className="panel"><Table items={items} columns={['title', 'vertical', 'status', 'priority', 'dueAt']} onSelect={setSelected}/></div> : <div className="kanban-board">{stages.tasks.map((stage, i) => {
                 const cards = items.filter(x => x.status === stage);
                 return <div className="kanban-col" key={stage} onDragOver={e => e.preventDefault()} onDrop={e => {
@@ -86,6 +88,7 @@ export default function WorkBoard() {
                 if (e.key === 'Enter')
                     addUpdate();
             }}/><button className="button primary" onClick={addUpdate}><Send size={16}/></button></div></div></Drawer>}
+ {importOpen&&<TaskImport companyId={company} onClose={()=>setImportOpen(false)} onImported={()=>{void query.invalidateQueries({queryKey:['records','tasks']});setImportOpen(false);toast.success('Tasks imported into Backlog');}}/>}
  {create && <Drawer title="New task" onClose={() => setCreate(false)}><RecordForm entity="tasks" onClose={() => setCreate(false)}/></Drawer>}
  </>;
 }
