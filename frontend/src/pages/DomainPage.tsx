@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Activity, AlertTriangle, ArrowUpRight, BadgeCheck, Banknote, BookOpen, BriefcaseBusiness, CreditCard, Download, FileText, GraduationCap, Package, Plus, Send, Upload, Users, Wallet } from 'lucide-react';
 import { useWorkspace } from '../App';
 import { dateText, fetchRecords, friendly, http, money, shortDate } from '../api';
 import { areas, configs } from '../config';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Bar, BarChart } from 'recharts';
+import RenewalsPanel from './RenewalsPanel';
 import { Drawer, Empty, ErrorState, Loader, PageHead, Panel, RecordForm, Stat, Status, Table, Tabs, Toolbar, useToast } from '../components/UI';
 const domainData: Record<string, {
     title: string;
@@ -58,12 +60,14 @@ export default function DomainPage({ domain }: {
     domain: string;
 }) {
     const { company, session } = useWorkspace();
+    const location = useLocation();
     const query = useQueryClient();
     const toast = useToast();
     const d = domainData[domain];
     const tabKeys = areas[domain as keyof typeof areas] || [];
     const [active, setActive] = useState(tabKeys[0]);
     useEffect(()=>{setActive(tabKeys[0]);setSelected(null);setSearch('');},[domain]);
+    useEffect(()=>{const tab=new URLSearchParams(location.search).get('tab');if(tab && tabKeys.includes(tab))setActive(tab);},[domain,location.search]);
     const [selected, setSelected] = useState<any | null>(null);
     const [create, setCreate] = useState(false);
     const [edit, setEdit] = useState(false);
@@ -95,7 +99,7 @@ export default function DomainPage({ domain }: {
     const inventory = useQuery({queryKey:['usdt-inventory',company],queryFn:async()=> (await http.get('/records/usdt/inventory')).data as any,enabled:domain==='advisory'&&active==='usdtTransactions',staleTime:15000});
     const summary = useQuery({queryKey:['insights-summary',company],queryFn:async()=> (await http.get('/insights/summary')).data, staleTime:45000});
     const overview = summary.data || {};
-    const q = useQuery({ queryKey: ['records', active, company, page, debouncedSearch], queryFn: () => fetchRecords(active, { limit: 50, page, ...(debouncedSearch ? {search:debouncedSearch}: {}) }) });
+    const q = useQuery({ queryKey: ['records', active, company, page, debouncedSearch], queryFn: () => fetchRecords(active, { limit: 50, page, ...(debouncedSearch ? {search:debouncedSearch}: {}) }), enabled:active !== 'renewals' });
     const records = q.data?.items || [];
     const enhanced = records.map(row=>{const o = active==='batches' && occupancy.data ? (occupancy.data || []).find((b:any)=>b._id===row._id) : undefined;const mentor=(masters.data?.mentors||[]).find((m:any)=>m._id===row.mentorId);const trader=(masters.data?.traders||[]).find((m:any)=>m._id===row.traderId);const vendor=(masters.data?.vendors||[]).find((m:any)=>m._id===row.vendorId);return {...row,...o,mentor:mentor?.title||row.mentor,instructor:mentor?.title||row.instructor,trader:trader?.title||row.trader,vendor:vendor?.title||row.vendor,clientName:(masters.data?.clients||[]).find((c:any)=>c._id===row.clientId)?.title||'—',projectName:(masters.data?.projects||[]).find((p:any)=>p._id===row.projectId)?.title||'—'};});
     const items = useMemo(() => enhanced.filter(x => x.status !== 'archived' && x.title?.toLowerCase().includes(search.toLowerCase()) && (active !== 'dailyPerformance' || ((!accountFilter || x.tradingAccountId===accountFilter) && (!dateFrom || String(x.performanceDate).slice(0,10)>=dateFrom) && (!dateTo || String(x.performanceDate).slice(0,10)<=dateTo)))), [q.data, occupancy.data, masters.data, search, active, accountFilter, dateFrom, dateTo]);
@@ -171,7 +175,8 @@ export default function DomainPage({ domain }: {
     const details = selected ? configs[active].columns.filter(c => c !== 'title') : [];
     return <><PageHead title={d.title} subtitle={d.desc} action={{ label: d.action, onClick: () => { setActive(tabKeys[0]); setCreate(true); } }}>{domain === 'advisory' && <button className="button secondary" onClick={() => setImportOpen(true)}><Upload size={16}/> Import statement</button>}</PageHead>
  <div className="stat-grid four">{stats.map(s => <Stat key={s.label} {...s}/>)}</div>
- <Panel className="domain-panel"><Tabs items={tabKeys.map(k => ({ key: k, label: configs[k].label }))} active={active} onChange={setTab}/><Toolbar search={search} setSearch={setSearch} extra={<>{active==='usdtTransactions'&&selected?.status==='posted'&&<button className="button danger" disabled={stateBusy} onClick={()=>void voidUsdt()}>Void selected trade</button>}<ExportButton items={items} entity={active}/>{active === 'installments' && <button className="button primary" onClick={() => setScheduleOpen(true)}><Plus size={15}/> Schedule installment</button>}{creatable.has(active) && <button className="button primary" onClick={() => setCreate(true)}><Plus size={15}/> Add {configs[active].label.replace(/s$/, '')}</button>}</>}/>{q.isPending ? <Loader /> : q.error ? <ErrorState error={q.error}/> : <Table items={items} columns={active==='batches'?['title','seats','enrolled','remainingSeats','status']:(active==='projects'||active==='invoices') ? configs[active].columns.map(x=>x==='clientId'?'clientName':x==='projectId'?'projectName':x) : configs[active].columns} onSelect={setSelected}/>}<div className="table-foot">Showing {items.length} of {q.data?.total || 0} records <div className="pager"><button className="button secondary compact" disabled={page<=1} onClick={()=>setPage(x=>x-1)}>Previous</button><span>Page {page}</span><button className="button secondary compact" disabled={page * 50 >= (q.data?.total || 0)} onClick={()=>setPage(x=>x+1)}>Next</button></div></div></Panel>
+ <Panel className="domain-panel"><Tabs items={tabKeys.map(k => ({ key: k, label: configs[k].label }))} active={active} onChange={setTab}/>{active!=='renewals'&&<><Toolbar search={search} setSearch={setSearch} extra={<>{active==='usdtTransactions'&&selected?.status==='posted'&&<button className="button danger" disabled={stateBusy} onClick={()=>void voidUsdt()}>Void selected trade</button>}<ExportButton items={items} entity={active}/>{active === 'installments' && <button className="button primary" onClick={() => setScheduleOpen(true)}><Plus size={15}/> Schedule installment</button>}{creatable.has(active) && <button className="button primary" onClick={() => setCreate(true)}><Plus size={15}/> Add {configs[active].label.replace(/s$/, '')}</button>}</>}/>{q.isPending ? <Loader /> : q.error ? <ErrorState error={q.error}/> : <Table items={items} columns={active==='batches'?['title','seats','enrolled','remainingSeats','status']:(active==='projects'||active==='invoices') ? configs[active].columns.map(x=>x==='clientId'?'clientName':x==='projectId'?'projectName':x) : configs[active].columns} onSelect={setSelected}/>}<div className="table-foot">Showing {items.length} of {q.data?.total || 0} records <div className="pager"><button className="button secondary compact" disabled={page<=1} onClick={()=>setPage(x=>x-1)}>Previous</button><span>Page {page}</span><button className="button secondary compact" disabled={page * 50 >= (q.data?.total || 0)} onClick={()=>setPage(x=>x+1)}>Next</button></div></div></>}</Panel>
+ {active==='renewals'&&<RenewalsPanel/>}
  {active==='dailyPerformance' && <Panel title="Trading performance" subtitle={accountFilter ? `Realized P&L: ${money(pnlTotal, selectedAccount?.currency || 'INR')}` : 'Choose one account to view currency-correct P&L'}><div className="filter-row"><select value={accountFilter} onChange={e=>setAccountFilter(e.target.value)}><option value="">All trading accounts</option>{(perfAccounts.data?.items||[]).map((a:any)=><option key={a._id} value={a._id}>{a.title}</option>)}</select><input type="date" aria-label="From date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}/><input type="date" aria-label="To date" value={dateTo} onChange={e=>setDateTo(e.target.value)}/></div><div className="chart-wrap">{accountFilter ? <ResponsiveContainer width="100%" height={260}><AreaChart data={performanceChart}><CartesianGrid strokeDasharray="4 4"/><XAxis dataKey="date"/><YAxis/><Tooltip/><Area type="monotone" dataKey="pnl" stroke="#5843d9" fill="#e9e5ff"/></AreaChart></ResponsiveContainer> : <p className="muted">Select an account to chart its daily P&L.</p>}</div></Panel>}
  {active==='usdtTransactions' && <Panel title="USDT inventory & trade performance" subtitle="Available units, open FIFO purchase lots and realized P&L across posted transactions.">
     {inventory.isPending?<Loader/>:inventory.error?<ErrorState error={inventory.error}/>:<div className="inventory-section">

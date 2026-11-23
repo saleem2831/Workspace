@@ -20,13 +20,13 @@ const upload = multer({
     cb(null, true);
   },
 });
-const safePurpose = new Set(['offerLetterFileId','certificateFileId','documentFileId','supportingFileId','workspace-logo']);
+const safePurpose = new Set(['offerLetterFileId','certificateFileId','documentFileId','supportingFileId','workspace-logo','renewal-proof']);
 router.post('/', upload.single('file'), wrap(async (req, res) => {
   const companyId = requireCompany(req);
   if (!req.file) throw new HttpError(400, 'Choose a file');
   const purpose = String(req.body.purpose || '');
   if (!safePurpose.has(purpose)) throw new HttpError(400, 'Unsupported document purpose');
-  const domain = purpose === 'documentFileId' ? 'sales' : purpose === 'supportingFileId' ? 'projects' : purpose === 'workspace-logo' ? 'settings' : 'learning';
+  const domain = purpose === 'renewal-proof' ? 'finance' : purpose === 'documentFileId' ? 'sales' : purpose === 'supportingFileId' ? 'projects' : purpose === 'workspace-logo' ? 'settings' : 'learning';
   requirePermission(req, domain, purpose === 'workspace-logo' ? 'admin' : 'write');
   // Magic byte verification prevents mislabeled HTML/scripts masquerading as documents.
   const content = req.file.buffer;
@@ -51,7 +51,7 @@ router.get('/:id', wrap(async (req, res) => {
   if (record.purpose === 'workspace-logo') {
     const current = await WorkspaceSetting.findOne({ key:'workspace', logoFileId:record._id });
     if (!current) throw new HttpError(404,'Logo not found');
-  } else if (!(req.companyIds || []).includes(String(record.companyId)) || !can(req, String(record.companyId), record.purpose === 'documentFileId' ? 'sales' : record.purpose === 'supportingFileId' ? 'projects' : 'learning', 'read')) {
+  } else if (!(req.companyIds || []).includes(String(record.companyId)) || !can(req, String(record.companyId), record.purpose === 'renewal-proof' ? 'finance' : record.purpose === 'documentFileId' ? 'sales' : record.purpose === 'supportingFileId' ? 'projects' : 'learning', 'read')) {
     throw new HttpError(404,'Document not found');
   }
   res.setHeader('Content-Type', record.mime);

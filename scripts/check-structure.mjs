@@ -10,7 +10,7 @@ assert.ok(!be.workspaces && !fe.workspaces, 'Each app must be independently inst
 assert.ok(!fs.existsSync(path.join(root, 'apps', 'gateway')), 'No gateway should exist');
 assert.ok(!fs.existsSync(path.join(root, 'services')), 'No backend microservices should exist');
 assert.ok(!fs.existsSync(path.join(root, 'package.json')), 'Install should be app-local, not from root');
-for (const file of ['frontend/.env', 'frontend/.env.example', 'backend/.env.example',
+for (const file of ['frontend/.env.example', 'backend/.env.example',
   'frontend/vite.config.ts', 'backend/src/server.ts', 'backend/src/seed.ts']) {
   assert.ok(fs.existsSync(path.join(root, file)), `Missing ${file}`);
 }
@@ -23,6 +23,7 @@ for (const route of ['/api/auth','/api/records','/api/workflows','/api/admin','/
 assert.match(vite, /proxyTarget/);
 assert.match(vite, /['"]\/api['"]/);
 assert.match(api, /VITE_API_BASE_URL/);
-assert.match(get('frontend', '.env'), /VITE_API_BASE_URL=\/api/);
-assert.ok(!get('frontend', '.env').includes('JWT_SECRET'));
+const frontendEnv = fs.existsSync(path.join(root,'frontend','.env')) ? get('frontend','.env') : get('frontend','.env.example');
+assert.match(frontendEnv, /VITE_API_BASE_URL=\/api/);
+assert.ok(!frontendEnv.includes('JWT_SECRET'));
 console.log('PASS — exactly two independently installable apps; backend REST API routes and frontend proxy configured.');

@@ -6,7 +6,7 @@ import { mayManageMemberRole, roleAllows } from '../lib/access.js';
 import { ensureCompanyQuota, ensureUserQuota } from '../saas/limits.js';
 import { TenantMembership } from '../saas/models.js';
 import { BUSINESS_MODULES, modulesForVertical, normalizeModules } from '../lib/company-modules.js';
-import { Company, User, Membership, AuditLog, WorkspaceSetting, ApprovalRequest, Subscription, Task, StoredFile, models } from '../models.js';
+import { Company, User, Membership, AuditLog, WorkspaceSetting, ApprovalRequest, Subscription, Renewal, Task, StoredFile, models } from '../models.js';
 import { allowedCompanies, audit, HttpError, requireCompany, requirePermission, wrap, moduleOf } from '../lib/security.js';
 const router = Router();
 const domains = ['operations','learning','advisory','sales','products','projects','finance','approvals','reports'];
@@ -35,8 +35,10 @@ router.get('/notifications', wrap(async (req,res) => {
     const productIds = allowedCompanies(req,'products');
     const operationsIds = allowedCompanies(req,'operations');
     const renewals = productIds.length ? await Subscription.countDocuments({ companyId:{$in:productIds},status:'active',renewAt:{$lte:new Date(Date.now()+30*86400000)}}) : 0;
+    const financeIds=allowedCompanies(req,'finance');
+    const financeRenewals=financeIds.length?await Renewal.countDocuments({companyId:{$in:financeIds},status:'active',nextDueAt:{$lte:new Date(Date.now()+30*86400000)}}):0;
     const tasksDue = operationsIds.length ? await Task.countDocuments({companyId:{$in:operationsIds},$or:[{ownerId:req.actor!.id},{assigneeIds:req.actor!.id}],status:{$nin:['archived','completed']},dueAt:{$lte:new Date(Date.now()+2*86400000)}}) : 0;
-    res.json({ count:approvals+renewals+tasksDue, approvals, renewals, tasksDue });
+    res.json({ count:approvals+renewals+financeRenewals+tasksDue, approvals, renewals, financeRenewals, tasksDue });
 }));
 router.get('/branding', wrap(async (req, res) => {
     const branding = await WorkspaceSetting.findOne({ key: 'workspace' }).lean();

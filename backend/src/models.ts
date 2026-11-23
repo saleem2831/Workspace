@@ -51,6 +51,24 @@ export const Project = make('Project', { clientId: ref(), leadId: ref(), manager
 export const Milestone = make('Milestone', { projectId: ref(), completedAt: dt(), supportingFileId: ref(), progress: { type: Number, default: 0 } });
 export const Invoice = make('Invoice', { clientId: ref(), projectId: ref(), reviewerId: ref(), reviewerIds: [{ type: Schema.Types.ObjectId }], number: str(), amount: money(), paidAmount: money(), currency: { type: String, default: 'INR' }, issuedAt: dt(), paidAt: dt(), approvalId: ref() });
 Invoice.schema.index({ tenantId: 1, companyId: 1, number: 1 }, { unique: true, partialFilterExpression: { number: { $type: 'string' } } });
+// Vendor-side commitments are intentionally distinct from customer Subscriptions.
+// Payment history is append-only and linked to the existing approved Expense ledger.
+export const Renewal = make('Renewal', {
+    category: {type:String,enum:['Hosting','Domain','SaaS','License','Insurance','Rent','AMC','Other'],default:'SaaS'},
+    vendorId: ref(), vendorName: str(), amount: money(), currency:{type:String,enum:['INR','AED','SAR','USD'],default:'INR'},
+    nextDueAt:{type:Date,required:true}, frequency:{type:String,enum:['monthly','quarterly','half-yearly','yearly','custom'],required:true},
+    customMonths:{type:Number,min:1,max:120}, anchorDay:{type:Number,min:1,max:31}, monthEndAnchor:{type:Boolean,default:false}, reminderDays:{type:[Number],default:[30,15,7,3,1]},
+    assigneeId:ref(), status:{type:String,enum:['active','paused','cancelled'],default:'active'},
+    currentExpenseId:ref(), lastRenewedAt:dt(), updatedBy:ref(),
+});
+Renewal.schema.index({tenantId:1,companyId:1,status:1,nextDueAt:1});
+export const RenewalPayment = mongoose.model('RenewalPayment', tenantSchema({
+    companyId:oid(), renewalId:oid(), dueAt:{type:Date,required:true},
+    amount:{type:Schema.Types.Decimal128,required:true}, currency:str(true),
+    expenseId:oid(), settlementJournalId:ref(),
+    reference:str(true), proofFileId:ref(), nextDueAt:{type:Date,required:true}, recordedBy:oid(),
+},opts));
+RenewalPayment.schema.index({tenantId:1,companyId:1,renewalId:1,dueAt:1},{unique:true});
 export const Expense = make('Expense', { vendor: str(), vendorId: ref(), reviewerIds: [{ type: Schema.Types.ObjectId }], category: str(), amount: money(), currency: { type: String, default: 'INR' }, approvalId: ref(), paidAt: dt() });
 export const Transfer = make('Transfer', { reviewerIds: [{ type: Schema.Types.ObjectId }], targetCompanyId: ref(), sourceAccount: str(), targetAccount: str(), sourceBankAccountId: ref(), targetBankAccountId: ref(), amount: money(), currency: { type: String, default: 'INR' }, approvalId: ref(), postedAt: dt() });
 export const BankAccount = make('BankAccount', { bankName: str(true), accountName: str(), accountNumberMasked: str(), currency: { type: String, default: 'INR' }, type: {type:String,enum:['bank','cash','wallet','broker'],default:'bank'}, companyOwned: {type:Boolean,default:true} });

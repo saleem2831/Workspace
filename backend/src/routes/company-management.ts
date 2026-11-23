@@ -46,7 +46,7 @@ router.patch('/:id',wrap(async(req,res)=>{
       operations:['tasks','events','taskUpdates'],learning:['students','courses','batches','mentors','internships','installments'],
       advisory:['tradingAccounts','traders','dailyPerformance','capitalMovements','usdtTransactions'],
       sales:['clients','leads','proposals'],products:['products','subscriptions'],projects:['projects','milestones'],
-      finance:['invoices','expenses','transfers','receipts','bankAccounts','vendors','journalEntries'],approvals:['approvals'],reports:[],
+      finance:['invoices','expenses','transfers','receipts','bankAccounts','vendors','journalEntries','renewals','renewalPayments'],approvals:['approvals'],reports:[],
     };
     const risky=removed.filter(domain=>(moduleCollections[domain]||[]).some(collection=>(impact.counts[collection]||0)>0));
     if(impact.pendingApprovals && removed.some(d=>['approvals','finance','advisory'].includes(d)))
